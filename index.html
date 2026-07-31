@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>한국어 회화 튜터 · Korean Conversation Tutor</title>
+<style>
+  :root{
+    --bg:#f3f4f8; --surface:#ffffff; --ink:#1f2330; --muted:#6b7280;
+    --primary:#5a55d6; --primary-soft:#ecebfb; --bot:#eef0f4;
+    --good:#15803d; --good-soft:#e9f6ee; --warn:#b45309; --warn-soft:#fdf3e7;
+    --line:#e5e7eb; --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",Roboto,sans-serif;
+    line-height:1.5;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:24px 16px 96px;}
+  header h1{font-size:20px; margin:0 0 2px;}
+  header p{margin:0 0 20px; color:var(--muted); font-size:14px;}
+  .hidden{display:none !important;}
+
+  h2.step{font-size:14px; text-transform:uppercase; letter-spacing:.04em;
+    color:var(--muted); margin:24px 0 10px;}
+
+  /* selectable cards */
+  .grid{display:grid; gap:10px;}
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px 16px; text-align:left; cursor:pointer; width:100%; font:inherit; color:inherit;
+    transition:border-color .12s, box-shadow .12s, transform .05s;
+  }
+  .card:hover{border-color:var(--primary); box-shadow:0 2px 10px rgba(90,85,214,.08);}
+  .card:active{transform:translateY(1px);}
+  .card:focus-visible{outline:2px solid var(--primary); outline-offset:2px;}
+  .card .title{font-weight:600;}
+  .card .ko{color:var(--muted); font-weight:500;}
+  .card .sub{font-size:13px; color:var(--muted); margin-top:4px;}
+  .card .roles{font-size:13px; margin-top:8px;}
+  .card .roles b{color:var(--primary);}
+  .tag{display:inline-block; font-size:11px; color:var(--warn);
+    background:var(--warn-soft); padding:1px 8px; border-radius:999px; margin-left:6px;}
+
+  .backbar{display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap;}
+  .pill{font-size:13px; background:var(--primary-soft); color:var(--primary);
+    border-radius:999px; padding:4px 12px; font-weight:600;}
+  .link{background:none; border:none; color:var(--muted); cursor:pointer;
+    font:inherit; text-decoration:underline; padding:4px;}
+  .link:hover{color:var(--ink);}
+
+  /* chat */
+  #log{display:flex; flex-direction:column; gap:12px; margin-bottom:16px;}
+  .row{display:flex;}
+  .row.you{justify-content:flex-end;}
+  .bubble{max-width:78%; padding:10px 14px; border-radius:16px; font-size:15px;
+    white-space:pre-wrap; word-break:break-word;}
+  .bot .bubble{background:var(--bot); border-bottom-left-radius:5px;}
+  .you .bubble{background:var(--primary); color:#fff; border-bottom-right-radius:5px;}
+
+  .feedback{background:var(--surface); border:1px solid var(--line);
+    border-left:3px solid var(--primary); border-radius:10px;
+    padding:10px 13px; font-size:13.5px; margin:2px 0 4px;}
+  .feedback .fb-good{color:var(--good);}
+  .feedback .corr{margin:6px 0;}
+  .feedback .chip{display:inline-block; font-size:11px; font-weight:600;
+    background:var(--primary-soft); color:var(--primary); border-radius:6px;
+    padding:0 6px; margin-right:6px; text-transform:lowercase;}
+  .feedback .why{color:var(--muted); font-size:12.5px; margin-left:2px;}
+  .feedback .slip{color:var(--warn); background:var(--warn-soft);
+    border-radius:8px; padding:6px 9px; margin:6px 0;}
+  .feedback .focus{font-weight:600; margin:6px 0;}
+  .feedback .tip{color:var(--muted);}
+  .feedback .arrow{color:var(--muted);}
+
+  .composer{position:fixed; left:0; right:0; bottom:0; background:var(--bg);
+    border-top:1px solid var(--line);}
+  .composer .inner{max-width:760px; margin:0 auto; padding:12px 16px;
+    display:flex; gap:8px;}
+  #input{flex:1; resize:none; font:inherit; padding:11px 14px;
+    border:1px solid var(--line); border-radius:12px; background:var(--surface);
+    color:var(--ink); max-height:120px;}
+  #input:focus{outline:2px solid var(--primary); outline-offset:0; border-color:transparent;}
+  #send{border:none; background:var(--primary); color:#fff; font:inherit; font-weight:600;
+    padding:0 18px; border-radius:12px; cursor:pointer;}
+  #send:disabled{opacity:.5; cursor:default;}
+
+  .thinking{color:var(--muted); font-size:13px; display:flex; gap:4px; align-items:center;}
+  .dot{width:6px; height:6px; border-radius:50%; background:var(--muted);
+    animation:blink 1.2s infinite both;}
+  .dot:nth-child(2){animation-delay:.2s} .dot:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,80%,100%{opacity:.25} 40%{opacity:1}}
+  @media (prefers-reduced-motion:reduce){.dot{animation:none; opacity:.5}}
+
+  .error{color:#b91c1c; background:#fdecec; border:1px solid #f7caca;
+    border-radius:10px; padding:10px 13px; font-size:14px; margin:8px 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>한국어 회화 튜터</h1>
+    <p>Practice colloquial Korean by roleplay. Pick a speech level, pick a scene, and start talking.</p>
+  </header>
+
+  <!-- SETUP: register + scenario -->
+  <section id="setup">
+    <h2 class="step">1 · Choose a speech level</h2>
+    <div id="registers" class="grid"></div>
+
+    <div id="scenarioBlock" class="hidden">
+      <h2 class="step">2 · Choose a scene</h2>
+      <div id="scenarios" class="grid"></div>
+    </div>
+    <div id="setupStatus"></div>
+  </section>
+
+  <!-- CHAT -->
+  <section id="chat" class="hidden">
+    <div class="backbar">
+      <span class="pill" id="chatRegister"></span>
+      <span id="chatScenario" style="font-weight:600;"></span>
+      <button class="link" id="newScene">New scene</button>
+      <button class="link" id="changeLevel">Change level</button>
+    </div>
+    <div id="log"></div>
+    <div id="chatStatus"></div>
+  </section>
+</div>
+
+<!-- composer is fixed at the bottom; only shown during chat -->
+<div class="composer hidden" id="composer">
+  <div class="inner">
+    <textarea id="input" rows="1" placeholder="Type your reply in Korean…"></textarea>
+    <button id="send">Send</button>
+  </div>
+</div>
+
+<script>
+const $ = sel => document.querySelector(sel);
+const clean = v => {
+  if (v === null || v === undefined) return "";
+  const s = String(v).trim();
+  return ["", "null", "none", "n/a", "na"].includes(s.toLowerCase()) ? "" : s;
+};
+
+async function api(path, body){
+  const res = await fetch(path, {
+    method: body ? "POST" : "GET",
+    headers: {"Content-Type": "application/json"},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if(!res.ok){
+    let detail = res.statusText;
+    try { detail = (await res.json()).detail || detail; } catch {}
+    throw new Error(detail);
+  }
+  return res.json();
+}
+
+let selectedRegister = null;
+let selectedRegisterLabel = "";
+let sessionId = null;
+
+// Registers 
+async function loadRegisters(){
+  const list = await api("/api/registers");
+  const box = $("#registers");
+  box.innerHTML = "";
+  list.forEach(r => {
+    const btn = document.createElement("button");
+    btn.className = "card";
+    const note = clean(r.note) ? `<span class="tag">${r.note}</span>` : "";
+    btn.innerHTML = `<div class="title">${r.label}${note}</div>
+                     <div class="sub">${r.hint}</div>`;
+    btn.onclick = () => chooseRegister(r.key, r.label);
+    box.appendChild(btn);
+  });
+}
+
+async function chooseRegister(key, label){
+  selectedRegister = key;
+  selectedRegisterLabel = label;
+  // highlight nothing fancy; just move to scenarios
+  $("#scenarioBlock").classList.remove("hidden");
+  $("#scenarios").innerHTML = "";
+  setStatus("#setupStatus", thinking("Thinking up some scenes…"));
+  try{
+    const { scenarios } = await api("/api/scenarios", { register: key });
+    setStatus("#setupStatus", "");
+    renderScenarios(scenarios);
+  }catch(e){ setStatus("#setupStatus", errBox(e.message)); }
+  $("#scenarioBlock").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+function renderScenarios(scenarios){
+  const box = $("#scenarios");
+  box.innerHTML = "";
+  scenarios.forEach(s => {
+    const btn = document.createElement("button");
+    btn.className = "card";
+    btn.innerHTML = `<div class="title">${s.title_en} <span class="ko">(${s.title_ko})</span></div>
+      <div class="sub">${s.setting}</div>
+      <div class="roles">You play <b>${s.student_role}</b> · Bot plays <b>${s.character_role}</b></div>`;
+    btn.onclick = () => startScene(s);
+    box.appendChild(btn);
+  });
+}
+
+async function startScene(scenario){
+  setStatus("#setupStatus", thinking("Setting the scene…"));
+  try{
+    const data = await api("/api/start", { register: selectedRegister, scenario });
+    sessionId = data.session_id;
+    $("#setup").classList.add("hidden");
+    $("#chat").classList.remove("hidden");
+    $("#composer").classList.remove("hidden");
+    $("#chatRegister").textContent = selectedRegisterLabel;
+    $("#chatScenario").textContent = scenario.title_en;
+    $("#log").innerHTML = "";
+    addBubble("bot", data.opening);
+    setStatus("#setupStatus", "");
+    $("#input").focus();
+  }catch(e){ setStatus("#setupStatus", errBox(e.message)); }
+}
+
+// chat turns 
+function addBubble(who, text){
+  const row = document.createElement("div");
+  row.className = "row " + (who === "you" ? "you" : "bot");
+  row.innerHTML = `<div class="bubble"></div>`;
+  row.querySelector(".bubble").textContent = text;
+  $("#log").appendChild(row);
+  scrollDown();
+}
+
+function addFeedback(fb){
+  if(!fb) return;
+  const parts = [];
+  if(clean(fb.did_well)) parts.push(`<div class="fb-good">✓ ${esc(fb.did_well)}</div>`);
+  (fb.corrections || []).forEach(c => {
+    const cat = clean(c.category) ? `<span class="chip">${esc(c.category)}</span>` : "";
+    const gloss = clean(c.gloss) ? ` <span class="why">(${esc(c.gloss)})</span>` : "";
+    const why = clean(c.why) ? `<div class="why">${esc(c.why)}</div>` : "";
+    parts.push(`<div class="corr">${cat}“${esc(clean(c.original))}” <span class="arrow">→</span> “${esc(clean(c.better))}”${gloss}${why}</div>`);
+  });
+  const rc = fb.register_check || {};
+  if(rc.on_target === false || String(rc.on_target).toLowerCase() === "false"){
+    const used = clean(rc.used_instead) || "another register";
+    parts.push(`<div class="slip">⚠ Register: slipped into ${esc(used)}. ${esc(clean(rc.note))}</div>`);
+  } else if(clean(rc.note)){
+    parts.push(`<div>Register: ${esc(clean(rc.note))}</div>`);
+  }
+  if(clean(fb.pattern_note)) parts.push(`<div class="focus">★ Focus: ${esc(fb.pattern_note)}</div>`);
+  if(clean(fb.tip)) parts.push(`<div class="tip">Tip: ${esc(fb.tip)}</div>`);
+  if(!parts.length) return;
+  const div = document.createElement("div");
+  div.className = "feedback";
+  div.innerHTML = parts.join("");
+  $("#log").appendChild(div);
+  scrollDown();
+}
+
+async function send(){
+  const input = $("#input");
+  const text = input.value.trim();
+  if(!text || !sessionId) return;
+  input.value = ""; autoGrow();
+  addBubble("you", text);
+  $("#send").disabled = true;
+  setStatus("#chatStatus", thinking("선생님이 생각 중…"));
+  try{
+    const data = await api("/api/message", { session_id: sessionId, text });
+    setStatus("#chatStatus", "");
+    addBubble("bot", data.reply);
+    addFeedback(data.feedback);
+  }catch(e){
+    setStatus("#chatStatus", errBox(e.message));
+  }finally{
+    $("#send").disabled = false;
+    input.focus();
+  }
+}
+
+// helpers
+function esc(s){ const d = document.createElement("div"); d.textContent = s ?? ""; return d.innerHTML; }
+function setStatus(sel, html){ $(sel).innerHTML = html; }
+function thinking(label){ return `<div class="thinking">${label}<span class="dot"></span><span class="dot"></span><span class="dot"></span></div>`; }
+function errBox(msg){ return `<div class="error">${esc(msg)} — is the server running, and is Ollama up?</div>`; }
+function scrollDown(){ window.scrollTo({top: document.body.scrollHeight, behavior:"smooth"}); }
+function autoGrow(){ const i = $("#input"); i.style.height = "auto"; i.style.height = Math.min(i.scrollHeight, 120) + "px"; }
+
+$("#send").onclick = send;
+$("#input").addEventListener("input", autoGrow);
+$("#input").addEventListener("keydown", e => {
+  if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); send(); }
+});
+$("#newScene").onclick = () => chooseRegister(selectedRegister, selectedRegisterLabel)
+  .then(() => { $("#chat").classList.add("hidden"); $("#composer").classList.add("hidden"); $("#setup").classList.remove("hidden"); });
+$("#changeLevel").onclick = () => {
+  $("#chat").classList.add("hidden"); $("#composer").classList.add("hidden");
+  $("#setup").classList.remove("hidden"); $("#scenarioBlock").classList.add("hidden");
+  window.scrollTo({top:0});
+};
+
+loadRegisters().catch(e => setStatus("#setupStatus", errBox(e.message)));
+</script>
+</body>
+</html>
